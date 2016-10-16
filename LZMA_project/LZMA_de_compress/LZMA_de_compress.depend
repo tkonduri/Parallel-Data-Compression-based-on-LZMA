@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1357471544 source:c:\users\project\desktop\lzma_project\lzma_de_compress\de_compress.c
+	<stdio.h>
+	<string.h>
+

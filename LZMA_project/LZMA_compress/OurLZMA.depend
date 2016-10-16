@@ -1,0 +1,14 @@
+# depslib dependency file v1.0
+1357455897 source:c:\users\tejas\desktop\lzma_project\ourlzma\compress.c
+	<stdio.h>
+	<malloc.h>
+
+1357448197 source:c:\documents and settings\admin\desktop\lzma_project\ourlzma\compress.c
+	<stdio.h>
+	<malloc.h>
+
+1357466512 source:c:\users\project\desktop\lzma_project\ourlzma\compress.c
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+

@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1357534388 source:c:\users\tejas\desktop\project code_block\decompress\de_compress.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+

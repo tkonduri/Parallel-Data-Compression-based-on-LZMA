@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1357458279 source:c:\users\tejas\desktop\lzma_project\temp\temp.c
+	<stdio.h>
+	<ctype.h>
+	<stdio.h>
+	<stdio.h>
+
+1357449295 source:c:\documents and settings\admin\desktop\lzma_project\temp\temp.c
+	<stdio.h>
+	<ctype.h>
+
+1357464435 source:c:\users\project\desktop\lzma_project\temp\temp.c
+	<stdio.h>
+	<string.h>
+	<stdio.h>
+	<stdio.h>
+
+1357459161 source:c:\users\project\desktop\lzma_project\ourlzma\crc16.c
+

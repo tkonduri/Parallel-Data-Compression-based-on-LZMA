@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1357467292 source:c:\users\tejas\desktop\lzma_project\lzma_compress\compress.c
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+

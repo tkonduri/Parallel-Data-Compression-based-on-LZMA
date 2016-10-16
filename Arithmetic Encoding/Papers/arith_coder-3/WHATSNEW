@@ -1,0 +1,210 @@
+-----------------------------------------------------------------------------
+Arith_coder	VERSION 3.	WHAT'S NEW	(January 2000)
+
+Thanks to Tim Wentford (timwentford@hotmail.com), a number of errors in
+version 3 have been identified.  The corrections are:
+
+diff stats.c
+219c219
+<     while (size < length)
+---
+>     while (size < length-1)
+242c242
+<     for (i = 0; i < pContext->max_length; i++)
+---
+>     for (i = 0; i <= pContext->max_length; i++)
+275c275
+<     while (symbol >= pContext->max_length) 
+---
+>     while (symbol > pContext->max_length) 
+279c279
+<                     pContext->max_length * 2 * sizeof(freq_value));
+---
+>                     (2*pContext->max_length+1) * sizeof(freq_value));
+287c287
+<         for (i = pContext->max_length; i < 2*pContext->max_length; i++)
+---
+>         for (i = pContext->max_length+1; i <= 2*pContext->max_length; i++)
+337c337
+<     if ((symbol > 0) && (symbol < pContext->max_length))
+---
+>     if ((symbol > 0) && (symbol <= pContext->max_length))
+683c683
+<     for (i = 0; i < pContext->initial_size; i++)
+---
+>     for (i = 0; i <= pContext->initial_size; i++)
+
+diff hashtable.c
+95d94
+<     pTable->pStrings->length = 0;
+130,131d128
+<       pNew->pBuckets->nBits = 0;
+<         pNew->pBuckets->nWords = 0;
+
+File arith_coder-3.tar.gz contains the revisions; but the corresponding
+changes to the Fenwick tree structure in the stats.c file in
+arith_coder-2.tar.gz have not been made.  My machine obviously zeroes
+memory when it is allocated!
+
+-----------------------------------------------------------------------------
+Arith_coder	VERSION 3.	WHAT'S NEW	(February 1999)
+
+1. File stats.c now implements the "Moffat tree" data structure, as
+opposed to the "Fenwick tree" data structure. For a description, see
+http://www.cs.mu.oz.au/~alistair/abstracts/mof99:spe.html. The revised
+data structure operates at about the same speed in char, but allows
+word to operate slightly faster. In extreme cases (test this with uint)
+of decreasing probability distributions, the new structure might be
+considerably faster.
+
+2. An additional "uint" model (in addition to bits, char, and word) has
+been included, which reads unsigned integers as coding symbols.  Note
+that each integer in the stream must be in the range 1..r+1, where r is
+the largest integer  in the stream to date. Hence, the first integer
+must always be 1.
+
+3. For up-to-date details, see http://www.cs.mu.oz.au/~alistair/arith_coder/
+
+-----------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------
+Word, Character, and Bit Based Compression Using Arithmetic Coding.
+-------------------------------------------------------------------
+** MINOR FIX October 1996: Setting Max_frequency in create_binary_context()
+     ensures binary coding now works correctly when B and F are variable.
+     (MOST_PROB_AT_END now also defined by default in stats.c)
+
+
+-----------------------------------------------------------------------------
+Arith_coder	VERSION 2.	WHAT'S NEW	(August 1996)
+
+Changes from original release:
+-----------------------------------------------------------------------------
+The programs char, bits, and word have been replaced by a single program,
+arith_coder.  Char, bits and word are now symbolic links to arith_coder.
+-----------------------------------------------------------------------------
+
+CHANGES TO DATASTREAM:
+
+Bytes are filled bitwise starting with most significant bit.  (Opposite of
+previous version).
+
+The range is now initially Half, instead of Half-1, and renormalisation is
+done when range <= Quarter instead of < Quarter.  This may alter the data
+stream.
+
+Finish_encode() now outputs B_bits (previously 3), so that these can be
+safely read into the buffer, without reading past eof or the start of different
+data.  (There is a FRUGAL_BITS option which can be defined, and only
+outputs 1, 2 or 3 bits, and the decoder recovers the extra bits read in, if
+required).
+
+HEADER FORMATS:
+Headers now include B_bits (formerly called code_bits) and a version string.
+
+Char: 10 bytes
++============+===========+===========+==========+
+| Magic Num  |  Version  |  F_bits   |  B_bits  |
+| 4 bytes    |  4 bytes  |  1 byte   |  1 byte  |
++============+===========+===========+==========+
+
+Word: 11 bytes
++============+===========+===========+==========+==========+
+| Magic Num  |  Version  |  F_bits   |  B_bits  | mbytes   |
+| 4 bytes    |  4 bytes  |  1 byte   |  1 byte  | 1 byte   |
++============+===========+===========+==========+==========+
+
+Bits: 12 bytes
++============+===========+===========+==========+==========+==============+
+| Magic Num  |  Version  |  F_bits   |  B_bits  | mbytes   | bits_context |
+| 4 bytes    |  4 bytes  |  1 byte   |  1 byte  | 1 byte   | 1 byte       |
++============+===========+===========+==========+==========+==============+
+
+-----------------------------------------------------------------------------
+
+CHANGES IN FUNCTIONALITY:
+
+The value B (B_bits, formerly called code_bits) may be specified from
+the command line with the -b option (if not fixed at compile time).
+
+The stats module maintains the most probable symbol at the end of the
+range which improves compression, and can also improve stats decoding
+speed (as it doesn't look up the Fenwick structure if the mps is received).
+
+Bits_outstanding and L are no longer maintained by the decoder (for improved
+performance).  This means it is theoretically possible for bits_outstanding
+to overflow when encoding, requiring the program to halt  (see notes in
+the code or the paper).  This means B_bits are output by finish_encode()
+instead of 1,2 or 3, so that the decoder can resync (because V is not
+maintained).
+
+
+End of file is checked for while reading input.
+-----------------------------------------------------------------------------
+
+SPEED OPTIMISATIONS:
+
+Coder:
+  Decoder uses a transformation D=V-L to greatly simplify renormalisation
+  loop.
+
+  Both F_bits and B_bits can be fixed at compile time for a performance
+  improvement (they are fixed by default unless compiled with -DVARY_NBITS).
+
+  The shift/add loops are now explicitly unrolled with macros if B_bits and
+  F_bits are known at compile time.
+
+  Redundant calculation of "r" in binary_arithmetic_{encode,decode} removed
+  (although compiler may optimise it out).
+
+Stats module:
+  When decoding a symbol, the "low" frequency value is determined when the
+  symbol is determined.  This is now exploited to help work out the "high"
+  value, rather than recalculating both from scratch.
+
+Bit i/o:
+  Different method for ADD_NEXT_INPUT_BIT may result in a slight
+  speed up.  
+-----------------------------------------------------------------------------
+
+OTHER CHANGES:
+
+Arithmetic coding module has been renamed from coder.c to arith.c.
+
+Input and output has been separated into files bitio.{h,c}.
+
+The program arith_coder has subsumed char, bits, and word, with arith_coder.c
+processing the command line and keeping track of memory usage.
+
+Stats.c:
+The zero frequency probability is now kept track of in a function and
+macro, for easy change of estimation method.
+The first item in the Fenwick structure (item 1) is now reserved for the
+zero frequency probability, even if it is zero.  This means it is effectively
+treated as any other symbol.
+
+FRUGAL_BITS coder option:
+Removes some of the speedup of the improved DECODE_RENORMALISE loop, but
+outputs the same number of bits as the previous version (approximately
+B_bits less per finish_encode(), and is still able to resync (with
+finish_encode(); start_encode(); pairs).
+
+Magic numbers now have a non-ascii character (\377) in them so the file
+will not be mistaken for ascii text.
+
+The types for code values, frequency values and division values (which
+store code/frequency) are all now typedef'd.  (See arith.h: code_value,
+freq_value and div_value)
+
+Bits.c:  Return value is checked when allocating memory for context zero.
+
+Compression rate when decoding is calculated and displayed.
+
+Peak memory usage is displayed instead of memory usage at end of coding
+(which may have been after a memory purge)
+
+When run with no parameters, a summary of commands and options are displayed.
+-----------------------------------------------------------------------------

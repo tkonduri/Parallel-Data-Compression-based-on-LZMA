@@ -1,0 +1,251 @@
+.PU
+.TH arith_coder 1 local "Rev: 3.0"
+.SH NAME
+arith_coder, bits, char, uint, word \- data compression using arithmetic
+coding and a bit, character, unsigned integer, or word based model
+
+.SH SYNOPSIS
+.ll +8
+
+.B bits 
+[\fB\-h\fR]
+[\fB\-v\fR]
+[
+\fB\-e\fR
+[\fB\-m\fR \fImbytes\fP]
+[\fB\-b\fR \fIcodebits\fP]
+[\fB\-f\fR \fIfbits\fP]
+[\fB\-c\fR \fIctxbits\fP]
+]
+|
+[\fB\-d\fR]
+[\fIfname\fP]
+
+.B char
+[\fB\-h\fR]
+[\fB\-v\fR]
+[\fB\-e\fR
+[\fB\-b\fR \fIcodebits\fP]
+[\fB\-f\fR \fIfbits\fP]
+]
+|
+[\fB-d\fR]
+[\fIfname\fP]
+
+.B uint
+[\fB\-h\fR]
+[\fB\-v\fR]
+[\fB\-e\fR
+[\fB\-b\fR \fIcodebits\fP]
+[\fB\-f\fR \fIfbits\fP]
+]
+|
+[\fB-d\fR]
+[\fIfname\fP]
+
+.B word
+[\fB\-h\fR]
+[\fB\-v\fR]
+[
+\fB\-e\fR
+[\fB\-m\fR \fImbytes\fP]
+[\fB\-b\fR \fIcodebits\fP]
+[\fB\-f\fR \fIfbits\fP]
+]
+|
+[
+\fB\-d\fR
+]
+[\fIfname\fP]
+
+.B arith_coder
+[\fB\-h\fR]
+[\fB\-v\fR]
+[\fB\-e\fR
+[\fB\-t\fR \fImodel\fP]
+[\fB\-m\fR \fImbytes\fP]
+[\fB\-b\fR \fIcodebits\fP]
+[\fB\-f\fR \fIfbits\fP]
+[\fB\-c\fR \fIctxbits\fP]
+]
+|
+[\fB\-d\fR]
+[\fIfname\fP]
+
+.ll -8
+.SH DESCRIPTION
+.I Bits, char, uint, 
+and
+.I word
+are programs that use arithmetic coding for compressing data, using
+bit, character, unsigned integer, and word based models, respectively.
+They are links to
+.I arith_coder,
+which can also be called directly with
+.B \-t
+.I model
+specified to be "bits", "char", "uint", or "word".
+
+.I Bits 
+uses an adaptive fixed order bit based model.
+The model encodes each
+bit of the input using probabilities conditioned by the previous 
+.I ctxbits
+bits of the file.
+The program potentially allocates up to 2^\fIctxbits\fR contexts requiring
+16 bytes each. If the memory limit is exceeded when allocating new contexts,
+existing contexts are re-used.
+
+.I Char
+uses an adaptive zero-order character based model.
+It
+is provided for comparison with the original CACM arithmetic coding
+package, but is unlikely to provide compression as good as
+.I bits
+or
+.I word.
+
+.I Uint
+uses an adaptive zero-order unsigned-integer based model which is initialised
+with a single escape symbol.
+Message symbols are read using the
+.I fwrite
+function.
+The input symbols are expected to occur for the first time in numerical 
+order.
+This removes the need to store the actual integer causing an escape 
+symbol to be transmitted: it is simply the next integer in sequence.
+This restriction imples that the first integer in the file must 1.
+
+.I Word
+uses an adaptive zero-order word based model.  
+If the memory limit is reached, all words are purged from memory, and
+collection of words is started from scratch.
+Binary files (for example,
+bit-map images) will be handled correctly, but compression is unlikely to be as
+good as the rates obtained by tailor-made compression regimes.
+
+The specified uncompressed file 
+.I fname
+is compressed to standard output if
+.B \-e
+is specified. Similarly, 
+a compressed file
+.I fname
+is decompressed to standard output if
+.B \-d
+is specified.
+If no
+.I fname
+is given, input is read from stdin.
+
+The level of compression obtained depends upon the size of the file, and the
+amount of redundancy. The program uses an arithmetic coding 
+scheme which uses frequency counts of 2^\fIfbits\fR.
+There is a constraint that 
+\fIfbits\fR <= \fIcodebits\fR-2, where \fIcodebits\fR is the
+number of bits of precision for arithmetic in the arithmetic coding module.
+So, for example, if \fIcodebits\fR is 32 then \fIfbits\fR could be at most 30.
+
+.ll -8
+.SH OPTIONS 
+.TP
+\f4\-h\fP
+Display help (lists valid command line parameters).
+.TP
+\f4\-e\fP
+Select compression.
+.TP
+\f4\-d\fP
+Select decompression.  The appropriate model is
+selected automatically, based on the magic number at the start of
+the compressed file.
+.TP
+\f4\-v\fP
+Verbose mode. Display details about compression performance.
+If this flag is the only option on the command line, displays the
+command line options, as well as information about the compile time
+characteristics of the program (whether shift/add or multiplication/division
+arithmetic is being used, etc).
+.TP
+\f4\-t\fP
+Specify \fImodel\fR to encode data.  Can be one of "bits", "char" or "word".
+.TP
+\f4\-m\fP
+Limit memory usage (for data structures) to
+.I mbytes
+megabytes.
+Default value is 1. (Bit and word based models only).
+.TP
+\f4\-b\fP
+Use
+.I codebits
+bits for arithmetic done in arithmetic coding.  Default is 32, and is
+bounded by the size of the data type used to store code values
+(typedef code_value in arith.h).
+.TP
+\f4\-f\fP
+Use
+.I fbits
+bits for frequency counts. Larger values allow
+more accurate modelling of large files and
+faster compression and decompression if
+compiled with shift/add arithmetic (the MULT_DIV option is not specified
+in the Makefile).
+However larger values of
+.I fbits
+relative to
+.I codebits
+may also reduce overall compression efficiency.
+This is because of
+truncation effects at the coding stage, and because of the recency
+effect that is a by-product of count scaling is reduced.
+.I Fbits
+must be at least 2 less than
+.I codebits.
+Default is 27.
+.TP
+\f4\-c\fP
+Use
+.I ctxbits
+previous bits
+as a context for each compressed bit. Larger values
+provide more accurate modelling and better compression.
+Note, however, that in the absence of any memory limit
+memory use is proportional to 2^\fIctxbits\fP.
+Default is 16.  (Bit based model only).
+
+ 
+
+.SH BUGS
+.LP
+Compressed files with the "word" and "bits" models may not be portable across
+architectures.  This may be the case if there are different
+alignment restrictions or the size of type freq_value
+(currently declared as "int") is different.
+This is due to memory limits being reached at different stages.
+
+
+.SH REFERENCE
+.I Arithmetic Coding Revisited,
+Alistair Moffat, Radford Neal, Ian H. Witten,
+ACM Transactions on Information Systems,
+16(3):256-294, July 1998;
+and
+.I An improved data structure for cumulative probability tables;
+Alistair Moffat,
+Software-Practice & Experience,
+1999.
+See also 
+.I http://www.cs.mu.oz.au/~alistair/abstracts/.
+
+.SH CONDITIONS
+These programs are supplied free of charge for research purposes only,
+and may not sold or incorporated into any commercial product.  There is
+ABSOLUTELY NO WARRANTY of any sort, nor any undertaking that they are
+fit for ANY PURPOSE WHATSOEVER.  Use them at your own risk.  If you do
+happen to find a bug, or have modifications to suggest, please report
+the same to Alistair Moffat, alistair@cs.mu.oz.au.  The copyright
+notice included in the source code
+and this statement of conditions must remain an integral
+part of each and every copy made of these files.
